@@ -23,21 +23,20 @@ import numpy as np
 import sys
 import os
 
-from csbdeep.utils import normalize
 from glob import glob
-from PIL import Image
+import joblib
 from shapely.geometry import Polygon, Point
 from shapely import wkt
-from tifffile import imread
 
-from stardist.models import StarDist2D
+from tiatoolbox.models.engine.nucleus_instance_segmentor import NucleusInstanceSegmentor
+from tiatoolbox.utils.misc import imread
 
 from cytomine import CytomineJob
 from cytomine.models import (
     Annotation, AnnotationCollection, ImageInstanceCollection, Job
 )
 
-__author__ = "Maree Raphael <raphael.maree@uliege.be>"
+__author__ = "Adam Shephard <adam.shephard@warwick.ac.uk>"
 
 
 def main(argv):
@@ -46,16 +45,18 @@ def main(argv):
         base_path = os.getenv("HOME")  # Mandatory for Singularity
         working_path = os.path.join(base_path, str(conn.job.id))
 
-        # Loading pre-trained Stardist model
-        np.random.seed(17)
-
-        # use local model file in ~/models/2D_versatile_HE/
-        model = StarDist2D(None, name='2D_versatile_HE', basedir='/models/')
-
         # Select images to process
         images = ImageInstanceCollection().fetch_with_filter(
             "project",
             conn.parameters.cytomine_id_project
+        )
+
+        # Use TIAToolbox nucleus instance segmentor engine for HoVerNet model
+        inst_segmentor = NucleusInstanceSegmentor(
+            pretrained_model=conn.parameters.hovernet_model,
+            num_loader_workers=2,
+            num_postproc_workers=2,
+            batch_size=4,
         )
 
         if conn.parameters.cytomine_id_images == 'all':
@@ -98,49 +99,35 @@ def main(argv):
                 print(f"roi_png_filename: {roi_png_filename}")
                 roi.dump(dest_pattern=roi_png_filename, mask=True, alpha=True)
 
-                # Stardist works with TIFF images without alpha channel, flattening PNG alpha mask to TIFF RGB
-                im = Image.open(roi_png_filename)
-                bg = Image.new("RGB", im.size, (255, 255, 255))
-                bg.paste(im, mask=im.split()[3])
-
-                roi_tif_filename = os.path.join(roi_path, f'{roi.id}.tif')
-                bg.save(roi_tif_filename, quality=100)
-
                 X_files = sorted(glob(os.path.join(roi_path, f'{roi.id}*.tif')))
                 X = list(map(imread, X_files))
-                n_channel = 3 if X[0].ndim == 3 else X[0].shape[-1]
-                axis_norm = (0, 1)  # normalize channels independently  (0,1,2) normalize channels jointly
-                if n_channel > 1:
-                    type = 'jointly' if axis_norm is None or 2 in axis_norm else 'independently'
-                    print(f"Normalizing image channels {type}.")
 
                 # Going over ROI images in ROI directory (in our case: one ROI per directory)
                 for x in range(0, len(X)):
-                    print(f"------------------- Processing ROI file {X}: {roi_tif_filename}")
-                    img = normalize(
-                        X[x],
-                        conn.parameters.stardist_norm_perc_low,
-                        conn.parameters.stardist_norm_perc_high,
-                        axis=axis_norm
-                    )
-                    # Stardist model prediction with thresholds
-                    labels, details = model.predict_instances(
-                        img,
-                        prob_thresh=conn.parameters.stardist_prob_t,
-                        nms_thresh=conn.parameters.stardist_nms_t
-                    )
+                    print(f"------------------- Processing ROI file {X}: {roi_png_filename}")
 
-                    print("Number of detected polygons: %d" % len(details['coord']))
+                    tile_output = inst_segmentor.predict(
+                        [X[x]],
+                        save_dir=os.path.join(roi_path, "hovernet_results"),
+                        mode="tile",
+                        on_gpu=False,
+                        crash_on_exception=True,
+                    )
+                    
+                    tile_preds = joblib.load(f"{tile_output[0][1]}.dat")
+
+                    print("Number of detected nuclei: %d" % len(tile_preds))
 
                     cytomine_annotations = AnnotationCollection()
                     # Go over detections in this ROI, convert and upload to Cytomine
-                    for polygroup in details['coord']:
+                    for nucleus in tile_preds:
                         # Converting to Shapely annotation
                         points = list()
-                        for i in range(len(polygroup[0])):
+                        contours = nucleus['contour']
+                        for i in range(len(contours)):
                             # Cytomine cartesian coordinate system, (0,0) is bottom left corner
                             # Mapping Stardist polygon detection coordinates to Cytomine ROI in whole slide image
-                            p = Point(minx + polygroup[1][i], miny - polygroup[0][i])
+                            p = Point(minx + contours[i][1], miny - contours[i][0])
                             points.append(p)
 
                         annotation = Polygon(points)

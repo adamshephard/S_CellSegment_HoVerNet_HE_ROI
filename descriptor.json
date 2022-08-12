@@ -6,7 +6,7 @@
     },
     "schema-version": "cytomine-0.1",
     "description": "Cell (nuclei) detection using HoVer-Net with versatile H&E pre-trained model",
-    "command-line": "python run.py CYTOMINE_HOST CYTOMINE_PUBLIC_KEY CYTOMINE_PRIVATE_KEY CYTOMINE_ID_PROJECT CYTOMINE_ID_SOFTWARE CYTOMINE_ID_IMAGES CYTOMINE_ID_ROI_TERM CYTOMINE_ID_CELL_TERM STARDIST_PROB_T STARDIST_NMS_T STARDIST_NORM_PERC_LOW STARDIST_NORM_PERC_HIGH",
+    "command-line": "python run.py CYTOMINE_HOST CYTOMINE_PUBLIC_KEY CYTOMINE_PRIVATE_KEY CYTOMINE_ID_PROJECT CYTOMINE_ID_SOFTWARE CYTOMINE_ID_IMAGES CYTOMINE_ID_ROI_TERM CYTOMINE_ID_CELL_TERM HOVERNET_MODEL",
     "inputs": [
         {
         	"id": "cytomine_host",
@@ -95,45 +95,12 @@
 	    "uri-sort-attribute": "name"
 	},
 	{
-	    "id": "stardist_prob_t",
+	    "id": "hovernet_model",
 	    "value-key": "@ID",
 	    "command-line-flag": "--@id",
-	    "name": "Stardist Probability Threshold",
-	    "description": "Probability Threshold in range [0.0, 1.0] - higher values lead to fewer segmented objects, but will likely avoid false positives",
-	    "default-value": 0.5,
-	    "set-by-server": false,
-	    "optional": true,
-	    "type": "Number"
-	},
-	{
-	    "id": "stardist_nms_t",
-	    "value-key": "@ID",
-	    "command-line-flag": "--@id",
-	    "name": "Stardist Non-Maximum Suppression Overlap threshold",
-	    "description": "Overlap Threshold in range [0.0, 1.0] - higher values allow segmented objects to overlap substantially.",
-	    "default-value": 0.5,
-	    "set-by-server": false,
-	    "optional": true,
-	    "type": "Number"
-	},
-	{
-	    "id": "stardist_norm_perc_low",
-	    "value-key": "@ID",
-	    "command-line-flag": "--@id",
-	    "name": "Stardist Image Normalization Percentile Low",
-	    "description": "Percentile low in range [0.0 100.0]",
-	    "default-value": 1,
-	    "set-by-server": false,
-	    "optional": true,
-	    "type": "Number"
-	},
-	{
-	    "id": "stardist_norm_perc_high",
-	    "value-key": "@ID",
-	    "command-line-flag": "--@id",
-	    "name": "Stardist Image Normalization Percentile High",
-	    "description": "Percentile high in range [0.0 100.0]",
-	    "default-value": 99.8,
+	    "name": "HoVer-Net model",
+	    "description": "The HoVer-Net model to be used. Options here, include hovernet_fast-pannuke, hovernet_fast-monusac, hovernet_original-consep, hovernet_original_kumar.",
+	    "default-value": "hovernet_fast-pannuke",
 	    "set-by-server": false,
 	    "optional": true,
 	    "type": "Number"
