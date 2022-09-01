@@ -1,7 +1,7 @@
 {
-    "name": "CellSegment_HoVerNet_HE_ROI",
-    "container-image": {
-        "image": "cytomineuliege/s_cellsegment_hovernet_he_roi",
+    "name": "CellSegment_HoVerNet_HE_ROI (no version)",
+	"container-image": {
+        "image": "cellsegment_hovernet_he_roi",
         "type": "singularity"
     },
     "schema-version": "cytomine-0.1",
@@ -103,7 +103,7 @@
 	    "default-value": "hovernet_fast-pannuke",
 	    "set-by-server": false,
 	    "optional": true,
-	    "type": "Number"
+	    "type": "String"
 	}
     ]
 }

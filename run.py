@@ -28,8 +28,8 @@ import joblib
 from shapely.geometry import Polygon, Point
 from shapely import wkt
 
+# sys.path.append('/home/adams/Projects/tiatoolbox_local/tiatoolbox/')
 from tiatoolbox.models.engine.nucleus_instance_segmentor import NucleusInstanceSegmentor
-from tiatoolbox.utils.misc import imread
 
 from cytomine import CytomineJob
 from cytomine.models import (
@@ -99,15 +99,14 @@ def main(argv):
                 print(f"roi_png_filename: {roi_png_filename}")
                 roi.dump(dest_pattern=roi_png_filename, mask=True, alpha=True)
 
-                X_files = sorted(glob(os.path.join(roi_path, f'{roi.id}*.tif')))
-                X = list(map(imread, X_files))
+                X_files = sorted(glob(os.path.join(roi_path, f'{roi.id}*.png')))
 
                 # Going over ROI images in ROI directory (in our case: one ROI per directory)
-                for x in range(0, len(X)):
-                    print(f"------------------- Processing ROI file {X}: {roi_png_filename}")
+                for x in range(0, len(X_files)):
+                    print(f"------------------- Processing ROI file {x}: {roi_png_filename}")
 
                     tile_output = inst_segmentor.predict(
-                        [X[x]],
+                        [X_files[x]],
                         save_dir=os.path.join(roi_path, "hovernet_results"),
                         mode="tile",
                         on_gpu=False,
@@ -123,13 +122,14 @@ def main(argv):
                     for nucleus in tile_preds:
                         # Converting to Shapely annotation
                         points = list()
-                        contours = nucleus['contour']
+                        contours = tile_preds[nucleus]['contour']
+                        nuc_type = tile_preds[nucleus]['type']
                         for i in range(len(contours)):
                             # Cytomine cartesian coordinate system, (0,0) is bottom left corner
                             # Mapping Stardist polygon detection coordinates to Cytomine ROI in whole slide image
                             p = Point(minx + contours[i][1], miny - contours[i][0])
                             points.append(p)
-
+# need to add way of including nuclei class
                         annotation = Polygon(points)
                         # Append to Annotation collection
                         cytomine_annotations.append(
