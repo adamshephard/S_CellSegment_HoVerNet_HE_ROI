@@ -127,8 +127,7 @@ def main(argv):
                         nuc_type = tile_preds[nucleus]['type']
                         for i in range(len(contours)):
                             # Cytomine cartesian coordinate system, (0,0) is bottom left corner
-                            # Mapping Stardist polygon detection coordinates to Cytomine ROI in whole slide image
-                            p = Point(minx + contours[i][1], miny + contours[i][0])
+                            p = Point(minx + contours[i][0], miny - contours[i][1])
                             points.append(p)
 # need to add way of including nuclei class
                         annotation = Polygon(points)
