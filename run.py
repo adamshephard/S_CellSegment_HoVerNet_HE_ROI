@@ -22,6 +22,7 @@ from __future__ import unicode_literals
 import numpy as np
 import sys
 import os
+import torch
 
 from glob import glob
 import joblib
@@ -54,9 +55,9 @@ def main(argv):
         # Use TIAToolbox nucleus instance segmentor engine for HoVerNet model
         inst_segmentor = NucleusInstanceSegmentor(
             pretrained_model=conn.parameters.hovernet_model,
-            num_loader_workers=2,
-            num_postproc_workers=2,
-            batch_size=4,
+            num_loader_workers=0,
+            num_postproc_workers=0,
+            batch_size=2,
         )
 
         if conn.parameters.cytomine_id_images == 'all':
@@ -127,7 +128,7 @@ def main(argv):
                         for i in range(len(contours)):
                             # Cytomine cartesian coordinate system, (0,0) is bottom left corner
                             # Mapping Stardist polygon detection coordinates to Cytomine ROI in whole slide image
-                            p = Point(minx + contours[i][1], miny - contours[i][0])
+                            p = Point(minx + contours[i][1], miny + contours[i][0])
                             points.append(p)
 # need to add way of including nuclei class
                         annotation = Polygon(points)

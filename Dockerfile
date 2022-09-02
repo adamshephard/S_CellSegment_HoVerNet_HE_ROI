@@ -14,6 +14,7 @@ RUN pip3 install -r /tmp/requirements.txt
 # Install scripts
 COPY descriptor.json /app/descriptor.json
 COPY run.py /app/run.py
+# COPY CMU-1-Small-Region.svs /app/CMU-1-Small-Region.svs
 
 ENTRYPOINT ["python3", "/app/run.py"]
 # ENTRYPOINT ["/bin/bash"]
