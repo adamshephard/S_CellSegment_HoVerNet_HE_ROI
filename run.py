@@ -137,7 +137,7 @@ def main(argv):
                                 location=annotation.wkt,
                                 id_image=id_image,  # conn.parameters.cytomine_id_image,
                                 id_project=conn.parameters.cytomine_id_project,
-                                id_terms=[conn.parameters.cytomine_id_cell_term]
+                                id_terms=[conn.parameters.cytomine_id_cell_term] #[int(nuc_type)] #
                             )
                         )
                         print(".", end='', flush=True)
